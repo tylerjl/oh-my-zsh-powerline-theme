@@ -1,157 +1,85 @@
-# You can set following options in your .zshrc
 #
-# ZSH_POWERLINE_SHOW_IP=true     # Display current IP in the prompt
-# ZSH_POWERLINE_SHOW_USER=true   # Display username in the prompt
+# Powerline: because anything else would be too easy.
+#
+# Save these for something? ✖ ➜ ═ ✭
+#
+# By convention:
+# psvar[1]: Custom prompt sigil ($, #, etc.) If nothing is set, default to '$'
 
+# Provides source control utilities
+autoload -Uz vcs_info
 
-# Define some variables for later use
-_HG_PROMPT='☿'
-_GIT_PROMPT='±'
-_DEFAULT_PROMPT='$'
+# Configure vcs_info
+zstyle ':vcs_info:*' enable git hg
+zstyle ':vcs_info:*' check-for-changes true
+zstyle ':vcs_info:hg:*' get-revision true # req'd for hg unstaged
+zstyle ':vcs_info:hg:*' hgrevformat '' # nuke the rev hash rendering in hg
+zstyle ':vcs_info:*' unstagedstr "%{$fg[red]%}✘%F{15}"
+zstyle ':vcs_info:*' stagedstr "%{$fg[cyan]%}✚%F{15}"
+zstyle ':vcs_info:*' formats "  %b %m%c%u"
+zstyle ':vcs_info:*+set-message:*' hooks vcs-set-misc-clean vcs-set-sigil
 
-# Define shebang function, and set it
-function get_shebang {
-    git branch &>/dev/null && echo $_GIT_PROMPT     && return
-    hg root    &>/dev/null && echo $_HG_PROMPT      && return
-                              echo $_DEFAULT_PROMPT && return }
+# Set %m with custom content
+function +vi-vcs-set-misc-clean() {
+    # Easiest way I found to do clean repo logic
+    if [ -z "${hook_com[staged]}${hook_com[unstaged]}" ] ; then
+        hook_com[misc]="%{$fg[green]%}✔%f%F{15}"
+    fi
+}
 
-# OS detection
+# If in a vcs repo, set a custom sigil
+function +vi-vcs-set-sigil {
+    case $vcs in
+        git) psvar[1]='±' ;;
+        hg)  psvar[1]='☿' ;;
+    esac
+}
+
+# Initialize psvar and set up vcs_info
+function precmd() { psvar=() ; vcs_info }
+
+# OS detection and logo settings
 [[ -n "${OS}" ]] || OS=$(uname)
+if [ $OS = "Darwin" ]; then
+    LOGO=""
+else
+    LOGO="🐧 "
+fi
 
-# color
-BG_COLOR_BLACK=%{$bg[black]%}
-BG_COLOR_BLUE=%{$bg[blue]%}
-BG_COLOR_GREEN=%{$bg[green]%}
-BG_COLOR_CYAN=%{$bg[cyan]%}
+# Time format string (1:00 PM)
+_ZSH_TIME="%D{%L:%M} %D{%p}"
 
+# Set some multiple-use colors
+BG_COLOR_SEAGREEN=%K{8}
+FG_COLOR_SEAGREEN=%F{8}
+BG_COLOR_DARKBLUE=%K{0}
+FG_COLOR_DARKBLUE=%F{0}
 
-BG_COLOR_0=%K{0}
-BG_COLOR_1=%K{1}
-BG_COLOR_2=%K{2}
-BG_COLOR_3=%K{3}
-BG_COLOR_4=%K{4}
-BG_COLOR_5=%K{5}
-BG_COLOR_6=%K{6}
-BG_COLOR_7=%K{7}
-BG_COLOR_8=%K{8}
-BG_COLOR_9=%K{9}
-BG_COLOR_10=%K{10}
-BG_COLOR_11=%K{11}
-BG_COLOR_12=%K{12}
-BG_COLOR_13=%K{13}
-BG_COLOR_14=%K{14}
-BG_COLOR_15=%K{15}
-
-FG_COLOR_BLACK=%{$fg[black]%}
-FG_COLOR_RED=%{$fg[red]%}
-FG_COLOR_GREEN=%{$fg[green]%}
-FG_COLOR_BLUE=%{$fg[blue]%}
-FG_COLOR_YELLOW=%{$fg[yellow]%}
-FG_COLOR_CYAN=%{$fg[cyan]%}
-FG_COLOR_WHITE=%{$fg[white]%}
-
-FG_COLOR_0=%F{0}
-FG_COLOR_1=%F{1}
-FG_COLOR_2=%F{2}
-FG_COLOR_3=%F{3}
-FG_COLOR_4=%F{4}
-FG_COLOR_5=%F{5}
-FG_COLOR_6=%F{6}
-FG_COLOR_7=%F{7}
-FG_COLOR_8=%F{8}
-FG_COLOR_9=%F{9}
-FG_COLOR_10=%F{10}
-FG_COLOR_11=%F{11}
-FG_COLOR_12=%F{12}
-FG_COLOR_13=%F{13}
-FG_COLOR_14=%F{14}
-FG_COLOR_15=%F{15}
-
-FG_COLOR_228=%F{228}
-# reset color
 reset_color=%f%k%b
 RESET=%{$reset_color%}
 
+# BUILD DAT PROMPT
+# ################
 
-GIT_DIRTY_COLOR=%F{196}
-GIT_CLEAN_COLOR=%F{118}
-GIT_PROMPT_INFO=%F{012}
-
-ZSH_THEME_GIT_PROMPT_PREFIX="  "
-ZSH_THEME_GIT_PROMPT_SUFFIX="$GIT_PROMPT_INFO"
-ZSH_THEME_GIT_PROMPT_DIRTY=" $GIT_DIRTY_COLOR✘"
-ZSH_THEME_GIT_PROMPT_CLEAN=" $GIT_CLEAN_COLOR✔"
-
-ZSH_THEME_HG_PROMPT_PREFIX=$ZSH_THEME_GIT_PROMPT_PREFIX
-ZSH_THEME_HG_PROMPT_SUFFIX=$ZSH_THEME_GIT_PROMPT_SUFFIX
-ZSH_THEME_HG_PROMPT_DIRTY=$ZSH_THEME_GIT_PROMPT_DIRTY
-ZSH_THEME_HG_PROMPT_CLEAN=$ZSH_THEME_GIT_PROMPT_CLEAN
-
-ZSH_THEME_GIT_PROMPT_ADDED="%F{082}✚%f"
-ZSH_THEME_GIT_PROMPT_MODIFIED="%F{166}✹%f"
-ZSH_THEME_GIT_PROMPT_DELETED="%F{160}✖%f"
-ZSH_THEME_GIT_PROMPT_RENAMED="%F{220]➜%f"
-ZSH_THEME_GIT_PROMPT_UNMERGED="%F{082]═%f"
-ZSH_THEME_GIT_PROMPT_UNTRACKED="%F{190]✭%f"
-
-ZSH_THEME_HG_PROMPT_ADDED=$ZSH_THEME_GIT_PROMPT_ADDED
-ZSH_THEME_HG_PROMPT_MODIFIED=$ZSH_THEME_GIT_PROMPT_MODIFIED
-ZSH_THEME_HG_PROMPT_DELETED=$ZSH_THEME_GIT_PROMPT_DELETED
-ZSH_THEME_HG_PROMPT_RENAMED=$ZSH_THEME_GIT_PROMPT_RENAMED
-ZSH_THEME_HG_PROMPT_UNMERGED=$ZSH_THEME_GIT_PROMPT_UNMERGED
-ZSH_THEME_HG_PROMPT_UNTRACKED=$ZSH_THEME_GIT_PROMPT_UNTRACKED
-
-ZSH_TIME="%D{%L:%M} %D{%p}"
-
-# option defaults
-[[ -n "$ZSH_POWERLINE_SHOW_IP" ]]    || ZSH_POWERLINE_SHOW_IP=true
-[[ -n "$ZSH_POWERLINE_SHOW_USER" ]]  || ZSH_POWERLINE_SHOW_USER=true
-
-# username
-
+# Newline and username
 PROMPT="
-$FG_COLOR_4$BG_COLOR_7"
+%{$fg[blue]%}%{$bg[white]%}%n"
 
-if [ $ZSH_POWERLINE_SHOW_USER = true ]; then
-    PROMPT=$PROMPT"%n"
-fi
+# Machine name, powerline transition
+PROMPT="${PROMPT}%{$fg[green]%} @%{$fg[red]%} %m "
+PROMPT="${PROMPT}%{$fg[white]%}${BG_COLOR_SEAGREEN}"
 
-# hostname
+# Timestamp, powerline transition
+PROMPT="${PROMPT}%{$fg[white]%}${BG_COLOR_SEAGREEN} ${_ZSH_TIME} "
+PROMPT="${PROMPT}${FG_COLOR_SEAGREEN}${BG_COLOR_DARKBLUE}"
 
-if [ $ZSH_POWERLINE_SHOW_IP = true ]; then
-    if [ "$(echo $IP | grep 200)" = "" ]; then
-    IP=`curl -si --max-time 2 http://ipecho.net/plain`
-        # no network connection, use hostname
-        IP="%m"
-    else
-        # replace dot by dash
-        IP=`echo -n $IP | tail -n 1 | sed "s/\./-/g"`
-    fi
-    PROMPT=$PROMPT"$FG_COLOR_2 @$FG_COLOR_5 $IP "
-fi
+# Logo, directory, vcs info
+PROMPT="${PROMPT}%{$fg[white]%}${BG_COLOR_DARKBLUE} ${LOGO} %2~"'${vcs_info_msg_0_}'
 
-PROMPT=$PROMPT"$FG_COLOR_7$BG_COLOR_8"$''
+# Powerline transition, newline, sigil, powerline transition
+PROMPT="${PROMPT} ${RESET}${FG_COLOR_DARKBLUE}
+${RESET}%{$fg[white]%}${BG_COLOR_SEAGREEN} %(1v.%1v.$) "
+PROMPT="${PROMPT}${RESET}${FG_COLOR_SEAGREEN}${RESET}"
 
-# datetime
-PROMPT=$PROMPT"$FG_COLOR_7$BG_COLOR_8 $ZSH_TIME "
-
-PROMPT=$PROMPT"$FG_COLOR_8$BG_COLOR_0"$''
-
-if [ $OS = "Darwin" ]; then
-	LOGO=""
-else
-	LOGO="🐧 "
-fi
-
-# current directory (%E hightline all line to end)
-PROMPT=$PROMPT"$FG_COLOR_15$BG_COLOR_0 $LOGO %2~"$'$(git_prompt_info)$(hg_prompt_info)'" $RESET$FG_COLOR_0
-$RESET$FG_COLOR_15$BG_COLOR_8 "'$(get_shebang) '
-
-PROMPT=$PROMPT"$RESET$FG_COLOR_8"$''
-
-# resrt
-PROMPT=$PROMPT"$RESET"
-
-local return_code="%(?..$FG_COLOR_RED%? ↵$RESET)"
-RPROMPT="${return_code}"
-
+# Right prompt return code
+RPROMPT="%(?..%{$fg[red]%}%? ↵${RESET})"
